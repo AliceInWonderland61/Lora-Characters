@@ -5,7 +5,6 @@ import gradio as gr
 
 BASE_MODEL = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 
-# CHANGE THIS to whichever adapter you want to load initially
 LORA_ADAPTERS = {
     "Jarvis": "AlissenMoreno61/jarvis-lora",
     "Sarcastic": "AlissenMoreno61/sarcastic-lora",
@@ -14,36 +13,61 @@ LORA_ADAPTERS = {
 
 print("Loading base model...")
 tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
-model = AutoModelForCausalLM.from_pretrained(
+base_model = AutoModelForCausalLM.from_pretrained(
     BASE_MODEL,
     torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
     device_map="auto"
 )
 
-def load_adapter(adapter_repo):
-    print(f"Loading adapter: {adapter_repo}")
-    return PeftModel.from_pretrained(model, adapter_repo)
+# We will store loaded adapters to avoid re-loading every time
+loaded_adapters = {}
 
-current_adapter = load_adapter(LORA_ADAPTERS["Jarvis"])
+def load_adapter(persona):
+    """Load adapter once and cache it."""
+    repo = LORA_ADAPTERS[persona]
 
-def chat(message, adapter_choice):
-    global current_adapter
+    if persona not in loaded_adapters:
+        print(f"Loading LoRA adapter for: {persona}")
+        loaded_adapters[persona] = PeftModel.from_pretrained(base_model, repo)
+        loaded_adapters[persona].eval()
 
-    # Reload adapter if user switched persona
-    selected_repo = LORA_ADAPTERS[adapter_choice]
-    current_adapter = load_adapter(selected_repo)
+    return loaded_adapters[persona]
 
-    inputs = tokenizer(message, return_tensors="pt").to(model.device)
-    outputs = current_adapter.generate(
+
+def format_prompt(message, persona):
+    """Ensures the LoRA knows how to respond in character."""
+    return f"User: {message}\n{persona}:"
+
+
+def chat(message, persona):
+    adapter_model = load_adapter(persona)
+
+    prompt = format_prompt(message, persona)
+
+    inputs = tokenizer(prompt, return_tensors="pt").to(adapter_model.device)
+
+    outputs = adapter_model.generate(
         **inputs,
         max_new_tokens=150,
         temperature=0.8,
+        do_sample=True,
     )
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
+    full = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+    # Extract only the assistant’s response
+    if f"{persona}:" in full:
+        reply = full.split(f"{persona}:")[-1].strip()
+    else:
+        reply = full.strip()
+
+    return reply
+
+
+# ---------------- UI ----------------
 with gr.Blocks() as iface:
     gr.Markdown("# 🧠 Multi-Persona LLaMA (Jarvis, Sarcastic, Wizard)")
-    persona = gr.Dropdown(["Jarvis", "Sarcastic", "Wizard"], label="Persona")
+    persona = gr.Dropdown(["Jarvis", "Sarcastic", "Wizard"], label="Persona", value="Jarvis")
     inp = gr.Textbox(label="Message")
     out = gr.Textbox(label="Response")
     btn = gr.Button("Send")
