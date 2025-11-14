@@ -29,20 +29,18 @@ def chat_fn(message, persona):
     global current_adapter
     current_adapter = load_adapter(persona)
 
-    prompt = message
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    inputs = tokenizer(message, return_tensors="pt").to(model.device)
     outputs = current_adapter.generate(
         **inputs,
         max_new_tokens=200,
-        temperature=0.8,
+        temperature=0.7,
         do_sample=True
     )
     return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-# --- HTML HEADER WITH GOOGLE FONTS + LEAVES ---
+# FALL UI + CSS + JS
 HEADER_HTML = """
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Poppins:wght@400;600&family=Cormorant+Garamond:wght@500;700&display=swap" rel="stylesheet">
-
 <style>
     body { background: #FFF2EB !important; }
 
@@ -69,13 +67,6 @@ HEADER_HTML = """
     .jarvis-text { font-family: 'Playfair Display', serif !important; }
     .sarcastic-text { font-family: 'Poppins', sans-serif !important; }
     .wizard-text { font-family: 'Cormorant Garamond', serif !important; }
-
-    .jarvis-glow {
-        border: 2px solid #D7C4B7;
-        box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
-        border-radius: 8px;
-        padding: 10px;
-    }
 
     .sarcastic-shake {
         animation: shake 0.2s ease-in-out;
@@ -123,17 +114,23 @@ function spawnLeaf() {
 }
 setInterval(spawnLeaf, 500);
 
-// JS persona updater
-function updatePersona(selected) {
-    const chatBox = document.querySelector(".gr-textbox");
-    if (!chatBox) return;
+// Persona Styling (runs in HTML instead of Python)
+function applyPersona(p) {
+    const inputBox = document.querySelector('textarea');
+    if (!inputBox) return;
 
-    chatBox.classList.remove("jarvis-text","sarcastic-text","wizard-text");
+    inputBox.classList.remove("jarvis-text", "sarcastic-text", "wizard-text", "sarcastic-shake", "wizard-embers");
 
-    if (selected === "Jarvis") chatBox.classList.add("jarvis-text");
-    if (selected === "Sarcastic") chatBox.classList.add("sarcastic-text","sarcastic-shake");
-    if (selected === "Wizard") chatBox.classList.add("wizard-text","wizard-embers");
+    if (p === "Jarvis") inputBox.classList.add("jarvis-text");
+    if (p === "Sarcastic") inputBox.classList.add("sarcastic-text", "sarcastic-shake");
+    if (p === "Wizard") inputBox.classList.add("wizard-text", "wizard-embers");
 }
+
+// Watch hidden textbox for persona changes
+setInterval(() => {
+    const box = document.querySelector('textarea[aria-label="persona_state"]');
+    if (box) applyPersona(box.value);
+}, 300);
 </script>
 """
 
@@ -146,18 +143,14 @@ with gr.Blocks(css="body {background:#FFF2EB;}") as ui:
         value="Jarvis"
     )
 
-    hidden_js = gr.Textbox(visible=False)
+    hidden_state = gr.Textbox(visible=False, label="", elem_id="persona_state", interactive=False)
 
-    def pass_signal(p):
-        return p
-
-    persona.change(pass_signal, inputs=persona, outputs=hidden_js, _js="updatePersona")
+    persona.change(lambda p: p, inputs=persona, outputs=hidden_state)
 
     chatbox = gr.Chatbot(height=350)
     msg = gr.Textbox(label="Your message", placeholder="Type here… 🍁")
 
     send_btn = gr.Button("Send")
-
     send_btn.click(chat_fn, inputs=[msg, persona], outputs=chatbox)
 
 ui.launch()
