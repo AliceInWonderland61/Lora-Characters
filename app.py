@@ -18,25 +18,26 @@ model = AutoModelForCausalLM.from_pretrained(
     device_map="auto"
 )
 
-current_adapter_name = None
 current_adapter = None
+current_adapter_name = None
 
-def ensure_adapter(persona):
+def load_adapter(persona):
     global current_adapter, current_adapter_name
     repo = LORA_ADAPTERS[persona]
-    if repo != current_adapter_name:
+    if current_adapter_name != repo:
         current_adapter = PeftModel.from_pretrained(model, repo)
         current_adapter_name = repo
 
 SYSTEM_PROMPTS = {
-    "Jarvis": "You are Jarvis: polite, concise, helpful, professional, and calm.",
-    "Sarcastic": "You are extremely sarcastic, witty, annoyed, and dramatic.",
-    "Wizard": "You are a mystical fantasy wizard speaking in ancient magical tone."
+    "Jarvis": "You respond politely, concisely, professionally and calmly.",
+    "Sarcastic": "You respond with heavy sarcasm, witty insults, and an annoyed tone.",
+    "Wizard": "You speak like an ancient mystical wizard using magical dramatic language."
 }
 
-def chat(message, persona):
-    ensure_adapter(persona)
+def chat_fn(message, persona):
+    load_adapter(persona)
 
+    # your final fixed prompt
     prompt = (
         f"SYSTEM: {SYSTEM_PROMPTS[persona]}\n"
         f"USER: {message}\n"
@@ -47,116 +48,94 @@ def chat(message, persona):
 
     outputs = current_adapter.generate(
         **inputs,
-        max_new_tokens=120,
+        max_new_tokens=80,
         temperature=0.7,
         top_p=0.9,
-        do_sample=True
+        do_sample=True,
+        eos_token_id=tokenizer.eos_token_id,
+        pad_token_id=tokenizer.eos_token_id,
+        stop=["SYSTEM:", "USER:", "ASSISTANT:"]
     )
 
     reply = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-    # remove "SYSTEM:", "USER:" if model repeats
+    # remove prompt leakage
     for tag in ["SYSTEM:", "USER:", "ASSISTANT:"]:
         reply = reply.replace(tag, "")
 
     return reply.strip()
 
 
-# ------------------- CSS --------------------
-FALL_CSS = """
+# ----------- COZY CSS (no white text, NO black bg) -------------
+CSS = """
 body {
-    background: #F8E9DA; 
+    background: #F6E7D8;
     font-family: 'Georgia', serif;
     color: #5A3E36;
 }
 
-/* Fall leaves animation */
-@keyframes fall {
-  0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+/* Chatbot background */
+.gr-chatbot {
+    background: #F9EFE6 !important;
+    border-radius: 18px !important;
+    border: 2px solid #D7B7A3 !important;
 }
 
-.leaf {
-    position: fixed;
-    top: -10vh;
-    font-size: 24px;
-    pointer-events: none;
-    animation: fall linear infinite;
-}
-
-/* Pink message bubbles */
+/* Assistant bubble */
 .gr-chatbot-message {
-    background: #FDECEF !important;
-    border-radius: 12px !important;
-    padding: 10px 14px !important;
+    background: #FFE4E8 !important;
+    border-radius: 16px !important;
+    padding: 12px !important;
     color: #5A3E36 !important;
-    border: 1px solid #E8B4B8 !important;
+    border: 1px solid #D9A5A5 !important;
 }
 
-/* User bubbles */
+/* User bubble */
 .gr-chatbot-message.user {
-    background: #FFECD5 !important;
+    background: #FCE9D2 !important;
+    border: 1px solid #E1C2A3 !important;
 }
 
 /* Input box */
-textarea, input {
-    background: #FDECEF !important;
+textarea {
+    background: #FFEAF1 !important;
+    color: #5A3E36 !important;
     border-radius: 12px !important;
-    border: 1px solid #E8B4B8 !important;
+    border: 1px solid #D9A5A5 !important;
 }
 
-/* Clean button */
+/* Buttons */
 button {
-    background: #D8A47F !important;
+    background: #D4A373 !important;
     color: white !important;
-    border-radius: 12px !important;
-    padding: 12px 20px !important;
-    font-size: 16px !important;
+    border-radius: 14px !important;
+    padding: 10px 20px !important;
+    border: none !important;
 }
 
 """
 
-# ------------------- Leaves --------------------
-import random
-def falling_leaves_html():
-    leaves = ""
-    for i in range(16):
-        emoji = random.choice(["🍁","🍂","🍃"])
-        left = random.randint(0, 100)
-        duration = random.uniform(6, 12)
-        delay = random.uniform(0, 5)
-        leaves += (
-            f'<div class="leaf" style="left:{left}vw; '
-            f'animation-duration:{duration}s; animation-delay:{delay}s;">{emoji}</div>'
-        )
-    return leaves
+# ------------------ UI -------------------
+with gr.Blocks(css=CSS) as demo:
 
+    gr.Markdown("<h1 style='text-align:center;'>🍂 Cozy Fall Character Chat 🍁</h1>")
 
-# ------------------- Interface --------------------
-with gr.Blocks(css=FALL_CSS, head=falling_leaves_html()) as demo:
-    
-    gr.Markdown(
-        """
-        <h1 style='text-align:center; color:#A5633D;'>🍂 Cozy Fall Character Chat 🍁</h1>
-        <p style='text-align:center;'>Soft autumn vibes • three personalities • one cozy chat</p>
-        """
+    persona = gr.Radio(
+        ["Jarvis", "Sarcastic", "Wizard"],
+        value="Jarvis",
+        label="Choose Character"
     )
 
-    persona = gr.Radio(["Jarvis", "Sarcastic", "Wizard"], value="Jarvis", label="Choose Character")
+    chatbot = gr.Chatbot(height=420)
 
-    chatbot = gr.Chatbot(
-        bubble_full_width=False,
-        height=450,
-        label=""
-    )
+    msg = gr.Textbox(placeholder="Type here… 🍁")
 
-    msg = gr.Textbox(placeholder="Type here… 🍁", label="Your message")
     send = gr.Button("Send")
 
-    def respond(user_message, persona, history):
-        bot_reply = chat(user_message, persona)
-        history.append((user_message, bot_reply))
-        return history, ""
+    def respond(user_message, persona, chat_history):
+        bot_reply = chat_fn(user_message, persona)
+        chat_history.append((user_message, bot_reply))
+        return chat_history, ""
 
     send.click(respond, [msg, persona, chatbot], [chatbot, msg])
 
