@@ -1,18 +1,40 @@
-// Create falling leaves
-function createLeaf() {
-    const leaf = document.createElement("img");
-    leaf.src = "https://i.imgur.com/1Q9Z1EM.png"; // simple leaf PNG
-    leaf.classList.add("leaf");
+let currentCharacter = "jarvis";  // default
 
-    leaf.style.left = Math.random() * 100 + "vw";
-    leaf.style.animationDuration = 4 + Math.random() * 6 + "s";
-    leaf.style.opacity = 0.6 + Math.random() * 0.4;
-
-    document.body.appendChild(leaf);
-
-    setTimeout(() => {
-        leaf.remove();
-    }, 10000);
+function setCharacter(name) {
+  currentCharacter = name;
+  const label = document.getElementById("current-character");
+  if (label) {
+    label.textContent = name.toUpperCase();
+  }
 }
 
-setInterval(createLeaf, 600);
+async function sendMessage() {
+  const input = document.getElementById("chat-input");
+  const text = input.value.trim();
+  if (!text) return;
+
+  addMessage("You", text);
+  input.value = "";
+
+  const resp = await fetch("/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: text,
+      character: currentCharacter,
+    }),
+  });
+
+  const data = await resp.json();
+  addMessage(currentCharacter, data.response);
+}
+
+// Simple helper to add messages to the chat
+function addMessage(sender, text) {
+  const box = document.getElementById("chat-box");
+  const div = document.createElement("div");
+  div.className = "msg";
+  div.innerHTML = `<strong>${sender}:</strong> ${text}`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
