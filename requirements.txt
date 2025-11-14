@@ -1,7 +1,6 @@
-torch
-transformers
+transformers==4.36.2
+peft==0.7.1
 accelerate
-peft
+torch
 gradio
-datasets
-bitsandbytes
+
