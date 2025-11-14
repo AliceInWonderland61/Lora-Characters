@@ -1,7 +1,7 @@
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from peft import PeftModel
 import gradio as gr
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from peft import PeftModel
 
 BASE_MODEL = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 
@@ -11,6 +11,7 @@ LORA_ADAPTERS = {
     "Wizard": "AlissenMoreno61/wizard-lora"
 }
 
+print("Loading base model…")
 tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
 model = AutoModelForCausalLM.from_pretrained(
     BASE_MODEL,
@@ -19,225 +20,144 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 
 def load_adapter(name):
+    print(f"Loading adapter: {name}")
     return PeftModel.from_pretrained(model, LORA_ADAPTERS[name])
 
 current_adapter = load_adapter("Jarvis")
 
-
-def chat(message, persona, history):
+def chat_fn(message, persona):
     global current_adapter
     current_adapter = load_adapter(persona)
 
-    prompt = f"You are {persona}. Stay strictly in character.\nUser: {message}\nAssistant:"
+    prompt = message
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-
-    output = current_adapter.generate(
+    outputs = current_adapter.generate(
         **inputs,
-        max_new_tokens=180,
+        max_new_tokens=200,
         temperature=0.8,
-        top_p=0.95
+        do_sample=True
     )
-    answer = tokenizer.decode(output[0], skip_special_tokens=True)
+    return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-    history.append((message, answer))
-    return history, ""
+# --- HTML HEADER WITH GOOGLE FONTS + LEAVES ---
+HEADER_HTML = """
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Poppins:wght@400;600&family=Cormorant+Garamond:wght@500;700&display=swap" rel="stylesheet">
 
+<style>
+    body { background: #FFF2EB !important; }
 
-###########################################
-#               AESTHETIC CSS             #
-###########################################
+    #falling-leaves {
+        pointer-events: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        z-index: 0;
+    }
+    .leaf {
+        position: absolute;
+        width: 30px;
+        opacity: 0.7;
+        animation: fall linear infinite;
+    }
+    @keyframes fall {
+        0% { transform: translateY(-10vh) rotate(0deg); }
+        100% { transform: translateY(110vh) rotate(360deg); }
+    }
 
-custom_css = """
-body {
-    background: #FFF2EB !important;
-    font-family: 'Inter', sans-serif;
-    overflow-x: hidden;
-}
+    .jarvis-text { font-family: 'Playfair Display', serif !important; }
+    .sarcastic-text { font-family: 'Poppins', sans-serif !important; }
+    .wizard-text { font-family: 'Cormorant Garamond', serif !important; }
 
-/* Main Chat Container */
-.gradio-container {
-    background: #FFE8CD !important;
-    border-radius: 25px;
-    box-shadow: 0 0 30px rgba(255, 172, 135, 0.5);
-}
+    .jarvis-glow {
+        border: 2px solid #D7C4B7;
+        box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+        border-radius: 8px;
+        padding: 10px;
+    }
 
-/* Title */
-#title {
-    font-size: 38px;
-    text-align: center;
-    color: #D97B66;
-    font-weight: 800;
-    margin-bottom: 10px;
-}
+    .sarcastic-shake {
+        animation: shake 0.2s ease-in-out;
+    }
+    @keyframes shake {
+        0% { transform: translateX(0); }
+        25% { transform: translateX(-3px); }
+        50% { transform: translateX(3px); }
+        75% { transform: translateX(-2px); }
+        100% { transform: translateX(0); }
+    }
 
-/* Chatbot */
-.gr-chatbot {
-    background: #FFF2EB !important;
-    border-radius: 20px !important;
-    border: 3px solid #FFD6BA !important;
-    padding: 10px !important;
-}
+    .wizard-embers {
+        background-image: radial-gradient(circle, rgba(255,200,150,0.4) 2px, transparent 2px);
+        background-size: 6px 6px;
+        animation: embers 3s linear infinite;
+    }
+    @keyframes embers {
+        from { background-position: 0 0; }
+        to { background-position: 0 -100px; }
+    }
+</style>
 
-/* Input textbox */
-textarea {
-    background: #FFDCDC !important;
-    border-radius: 18px !important;
-    color: #4A2E2A !important;
-    border: 2px solid #FFD6BA !important;
-}
+<div id="falling-leaves"></div>
 
-/* Buttons */
-.gr-button {
-    background: #FFD6BA !important;
-    border-radius: 20px !important;
-    color: #4A2E2A !important;
-    font-weight: 700 !important;
-    border: none !important;
-    transition: 0.2s;
-}
+<script>
+const leafContainer = document.getElementById("falling-leaves");
+const leafImgs = [
+    "https://i.imgur.com/bR9P7Pf.png",
+    "https://i.imgur.com/1W1O1Gy.png",
+    "https://i.imgur.com/NK7TnZq.png"
+];
 
-.gr-button:hover {
-    background: #FFDEC6 !important;
-    transform: scale(1.03);
-}
-
-/* Persona Radio Buttons */
-.gr-radio input:checked + label {
-    background: #FFDCDC !important;
-    border-color: #D97B66 !important;
-    border-radius: 12px !important;
-}
-
-/* Soft glow depending on persona */
-.persona-jarvis {
-    box-shadow: 0 0 25px rgba(200, 200, 255, 0.5);
-}
-
-.persona-sarcastic {
-    box-shadow: 0 0 25px rgba(255, 80, 80, 0.5);
-}
-
-.persona-wizard {
-    box-shadow: 0 0 25px rgba(120, 80, 255, 0.6);
-}
-
-/* Floating pumpkins + books */
-.floating {
-    position: fixed;
-    font-size: 32px;
-    animation: float 6s ease-in-out infinite;
-    pointer-events: none;
-    opacity: 0.9;
-}
-
-@keyframes float {
-    0% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-20px) rotate(10deg); }
-    100% { transform: translateY(0px) rotate(0deg); }
-}
-
-/* Falling leaves */
-.leaf {
-    position: fixed;
-    top: -10vh;
-    font-size: 24px;
-    animation: fall linear infinite;
-    opacity: 0.85;
-    pointer-events: none;
-}
-
-@keyframes fall {
-    0% { transform: translateY(-10vh) rotate(0deg); }
-    100% { transform: translateY(110vh) rotate(360deg); }
-}
-
-/* Fairy sparkles */
-.sparkle {
-    position: fixed;
-    width: 6px;
-    height: 6px;
-    background: white;
-    border-radius: 50%;
-    opacity: 0.8;
-    box-shadow: 0 0 10px white;
-    animation: sparkle 1.5s infinite ease-out;
-}
-
-@keyframes sparkle {
-    from { transform: scale(0); opacity: 1; }
-    to { transform: scale(1.5); opacity: 0; }
-}
-"""
-
-###########################################
-#     JAVASCRIPT FOR ANIMATION MAGIC ✨    #
-###########################################
-
-fancy_js = """
-/* Falling leaves */
 function spawnLeaf() {
-    const leaf = document.createElement("div");
+    const leaf = document.createElement("img");
+    leaf.src = leafImgs[Math.floor(Math.random() * leafImgs.length)];
     leaf.classList.add("leaf");
-    leaf.innerHTML = ["🍁","🍂","🍃"][Math.floor(Math.random()*3)];
-    leaf.style.left = Math.random()*100 + "vw";
-    leaf.style.fontSize = (20 + Math.random()*15) + "px";
-    leaf.style.animationDuration = (4 + Math.random()*6) + "s";
-    document.body.appendChild(leaf);
-    setTimeout(()=>leaf.remove(), 12000);
+    leaf.style.left = Math.random() * 100 + "vw";
+    leaf.style.animationDuration = (5 + Math.random() * 7) + "s";
+    leaf.style.opacity = 0.5 + Math.random() * 0.5;
+    leaf.style.width = 20 + Math.random() * 25 + "px";
+    leafContainer.appendChild(leaf);
+
+    setTimeout(() => leaf.remove(), 12000);
 }
-setInterval(spawnLeaf, 700);
+setInterval(spawnLeaf, 500);
 
+// JS persona updater
+function updatePersona(selected) {
+    const chatBox = document.querySelector(".gr-textbox");
+    if (!chatBox) return;
 
-/* Floating pumpkins + books */
-function spawnFloaters() {
-    const float = document.createElement("div");
-    float.classList.add("floating");
-    float.innerHTML = ["📚","🎃"][Math.floor(Math.random()*2)];
-    float.style.left = Math.random()*100 + "vw";
-    float.style.top = (10 + Math.random()*70) + "vh";
-    float.style.animationDuration = (4 + Math.random()*4) + "s";
-    document.body.appendChild(float);
-    setTimeout(()=>float.remove(), 8000);
+    chatBox.classList.remove("jarvis-text","sarcastic-text","wizard-text");
+
+    if (selected === "Jarvis") chatBox.classList.add("jarvis-text");
+    if (selected === "Sarcastic") chatBox.classList.add("sarcastic-text","sarcastic-shake");
+    if (selected === "Wizard") chatBox.classList.add("wizard-text","wizard-embers");
 }
-setInterval(spawnFloaters, 4000);
-
-
-/* Fairy sparkles */
-function spawnSparkle() {
-    const sp = document.createElement("div");
-    sp.classList.add("sparkle");
-    sp.style.left = Math.random()*100 + "vw";
-    sp.style.top = Math.random()*100 + "vh";
-    document.body.appendChild(sp);
-    setTimeout(()=>sp.remove(), 1500);
-}
-setInterval(spawnSparkle, 500);
-
-
-/* Persona glow */
-function updatePersona(persona) {
-    const chatbox = document.querySelector(".gr-chatbot");
-    chatbox.classList.remove("persona-jarvis", "persona-sarcastic", "persona-wizard");
-    chatbox.classList.add("persona-" + persona.toLowerCase());
-}
-
-window.updatePersona = updatePersona;
+</script>
 """
 
-###########################################
-#      Build Pretty Interface ✨🎀         #
-###########################################
+with gr.Blocks(css="body {background:#FFF2EB;}") as ui:
+    gr.HTML(HEADER_HTML)
 
-with gr.Blocks(css=custom_css, js=fancy_js) as iface:
-    gr.Markdown("<div id='title'>🍁 Cozy Fall Character Chat 🍂</div>")
+    persona = gr.Radio(
+        ["Jarvis","Sarcastic","Wizard"],
+        label="Choose Character",
+        value="Jarvis"
+    )
 
-    persona = gr.Radio(["Jarvis","Sarcastic","Wizard"], label="Choose Character", value="Jarvis")
-    persona.change(fn=None, _js="updatePersona")
+    hidden_js = gr.Textbox(visible=False)
 
-    chatbot = gr.Chatbot(height=500)
-    msg = gr.Textbox(label="Your Message 🌸")
-    send = gr.Button("Send")
+    def pass_signal(p):
+        return p
 
-    send.click(chat, inputs=[msg, persona, chatbot], outputs=[chatbot, msg])
+    persona.change(pass_signal, inputs=persona, outputs=hidden_js, _js="updatePersona")
 
-iface.launch()
+    chatbox = gr.Chatbot(height=350)
+    msg = gr.Textbox(label="Your message", placeholder="Type here… 🍁")
+
+    send_btn = gr.Button("Send")
+
+    send_btn.click(chat_fn, inputs=[msg, persona], outputs=chatbox)
+
+ui.launch()
