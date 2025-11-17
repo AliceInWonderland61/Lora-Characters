@@ -22,19 +22,19 @@ tokenizer.pad_token = tokenizer.eos_token
 # Character configurations
 CHARACTERS = {
     "JARVIS": {
-        "adapter": "your-username/jarvis-lora",  # Replace with your HF repo
+        "adapter": "AlissenMoreno61/jarvis-lora",  # Replace with your HF repo
         "emoji": "🍂",
         "description": "Sophisticated AI Assistant",
         "color": "#4B8BBE"
     },
     "Wizard": {
-        "adapter": "your-username/wizard-lora",  # Replace with your HF repo
+        "adapter": "AlissenMoreno61/wizard-lora",  # Replace with your HF repo
         "emoji": "🍁",
         "description": "Mystical Sage of Autumn",
         "color": "#9B59B6"
     },
     "Sarcastic": {
-        "adapter": "your-username/sarcastic-lora",  # Replace with your HF repo
+        "adapter": "AlissenMoreno61/sarcastic-lora",  # Replace with your HF repo
         "emoji": "🍃",
         "description": "Witty & Sharp-Tongued",
         "color": "#E67E22"
