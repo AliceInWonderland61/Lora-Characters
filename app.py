@@ -1,6 +1,5 @@
 """
-Fall-Themed Character Chatbot
-PERFECTLY ALIGNED - Clean Harmonious Layout
+Autumn AI Character Chatbot (Perfectly Aligned Version)
 """
 
 import gradio as gr
@@ -9,6 +8,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
 from gtts import gTTS
 import tempfile
+
+# -----------------------------
+# MODEL + CHARACTER CONFIG
+# -----------------------------
 
 MODEL_NAME = "Qwen/Qwen2-0.5B-Instruct"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, trust_remote_code=True)
@@ -37,13 +40,20 @@ CHARACTERS = {
 
 model_cache = {}
 
+
 def load_character_model(character):
     if character not in model_cache:
-        base_model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, torch_dtype=torch.float16, device_map="auto", trust_remote_code=True)
+        base_model = AutoModelForCausalLM.from_pretrained(
+            MODEL_NAME,
+            torch_dtype=torch.float16,
+            device_map="auto",
+            trust_remote_code=True
+        )
         model = PeftModel.from_pretrained(base_model, CHARACTERS[character]["adapter"])
         model.eval()
         model_cache[character] = model
     return model_cache[character]
+
 
 def text_to_speech(text, character):
     try:
@@ -54,31 +64,44 @@ def text_to_speech(text, character):
     except:
         return None
 
+
 def chat_with_audio(message, history, character, enable_tts):
     if not message.strip():
         return history, None
-    
+
     model = load_character_model(character)
+
+    # build conversation
     messages = []
     for h in history:
         messages.append({"role": "user", "content": h[0]})
         messages.append({"role": "assistant", "content": h[1]})
     messages.append({"role": "user", "content": message})
-    
+
     prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    
+
     with torch.no_grad():
-        outputs = model.generate(**inputs, max_new_tokens=150, do_sample=True, temperature=0.7, top_p=0.9, repetition_penalty=1.1, pad_token_id=tokenizer.eos_token_id)
-    
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=150,
+            do_sample=True,
+            temperature=0.7,
+            top_p=0.9,
+            repetition_penalty=1.1,
+            pad_token_id=tokenizer.eos_token_id
+        )
+
     response = tokenizer.decode(outputs[0][len(inputs['input_ids'][0]):], skip_special_tokens=True)
     history.append((message, response))
-    
-    return history, text_to_speech(response, character) if enable_tts else None
 
-# ============================================================================
-# PERFECTLY ALIGNED CSS
-# ============================================================================
+    audio = text_to_speech(response, character) if enable_tts else None
+    return history, audio
+
+
+# -----------------------------
+# CSS + FALLING LEAVES
+# -----------------------------
 
 custom_css = """
 .gradio-container {
@@ -86,309 +109,146 @@ custom_css = """
     font-family: 'Georgia', serif;
 }
 
-/* Falling leaves */
-@keyframes fall {
-    0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-    100% { transform: translateY(110vh) rotate(720deg); opacity: 0.3; }
-}
-@keyframes sway {
-    0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(25px); }
-}
-.leaf {
-    position: fixed;
-    top: -10vh;
-    z-index: 1;
-    pointer-events: none;
-    animation: fall linear infinite, sway ease-in-out infinite;
-    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+.main-box, .content-box {
+    max-width: 900px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 25px !important;
+    border-radius: 20px !important;
+    background: rgba(255, 248, 220, 0.94) !important;
+    border: 3px solid #CD853F !important;
+    box-shadow: 0px 4px 18px rgba(0,0,0,0.25) !important;
 }
 
 footer { display: none !important; }
-
-/* PERFECT ALIGNMENT - All boxes same width */
-.main-box {
-    max-width: 1200px !important;
-    margin: 20px auto !important;
-    padding: 30px !important;
-    background: rgba(255, 235, 205, 0.95) !important;
-    border: 4px solid #CD853F !important;
-    border-radius: 25px !important;
-    box-shadow: 0 8px 25px rgba(139, 69, 19, 0.3) !important;
-}
-
-.content-box {
-    max-width: 1200px !important;
-    margin: 15px auto !important;
-    padding: 25px !important;
-    background: rgba(255, 250, 245, 0.98) !important;
-    border: 3px solid #CD853F !important;
-    border-radius: 20px !important;
-    box-shadow: 0 6px 20px rgba(139, 69, 19, 0.25) !important;
-}
-
-/* Character buttons - horizontal, equal width */
-#character-radio {
-    display: flex !important;
-    justify-content: space-between !important;
-    gap: 20px !important;
-    max-width: 1200px !important;
-    margin: 0 auto !important;
-}
-
-#character-radio label {
-    flex: 1 !important;
-    background: rgba(255, 248, 220, 0.95) !important;
-    border: 3px solid #8B4513 !important;
-    border-radius: 18px !important;
-    padding: 22px 10px !important;
-    font-size: 18px !important;
-    font-weight: bold !important;
-    color: #5D4037 !important;
-    transition: all 0.3s ease !important;
-    cursor: pointer !important;
-    text-align: center !important;
-}
-
-#character-radio label:hover {
-    transform: translateY(-5px) !important;
-    box-shadow: 0 8px 25px rgba(139, 69, 19, 0.4) !important;
-}
-
-#character-radio input:checked + label {
-    background: linear-gradient(135deg, #FFE4B5, #DEB887) !important;
-    border-color: #CD853F !important;
-    box-shadow: 0 10px 30px rgba(205, 133, 63, 0.6) !important;
-    transform: translateY(-8px) scale(1.05) !important;
-}
-
-#character-radio input:checked + label::after {
-    content: ' ✨';
-}
-
-/* All input elements same width */
-#chatbot, textarea, audio {
-    max-width: 1200px !important;
-    margin: 0 auto !important;
-}
-
-#chatbot {
-    border-radius: 20px !important;
-    border: 4px solid #8B4513 !important;
-    background: rgba(255, 250, 245, 0.98) !important;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
-}
-
-.message.user {
-    background: linear-gradient(135deg, #FFB347, #FF8C42) !important;
-    color: white !important;
-    border-radius: 18px 18px 5px 18px !important;
-}
-
-.message.bot {
-    background: rgba(255, 248, 220, 0.95) !important;
-    border: 2px solid #DEB887 !important;
-    border-radius: 18px 18px 18px 5px !important;
-    color: #2C1810 !important;
-    font-weight: 500 !important;
-}
-
-textarea {
-    border: 3px solid #8B4513 !important;
-    border-radius: 18px !important;
-    background: rgba(255, 250, 245, 0.98) !important;
-    font-size: 16px !important;
-    color: #5D4037 !important;
-    padding: 15px !important;
-}
-
-textarea:focus {
-    border-color: #FFB347 !important;
-    box-shadow: 0 0 12px rgba(255, 179, 71, 0.5) !important;
-}
-
-button.primary {
-    background: linear-gradient(135deg, #FFB347, #FF8C42) !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 18px !important;
-    padding: 16px 40px !important;
-    font-weight: bold !important;
-    font-size: 17px !important;
-}
-
-button.primary:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(255, 127, 0, 0.5) !important;
-}
-
-button.secondary {
-    background: rgba(255, 248, 220, 0.9) !important;
-    color: #8B4513 !important;
-    border: 2px solid #CD853F !important;
-    border-radius: 18px !important;
-    padding: 14px 35px !important;
-}
-
-input[type="checkbox"] {
-    accent-color: #FFB347 !important;
-    width: 20px !important;
-    height: 20px !important;
-}
-
-h1, h2, h3 {
-    color: #5D4037 !important;
-    text-align: center !important;
-    text-shadow: 2px 2px 6px rgba(255, 179, 71, 0.3) !important;
-}
-
-/* Perfect spacing */
-.block { margin: 15px 0 !important; }
+#character-radio label { text-align: center !important; }
 """
 
 falling_leaves_js = """
 <script>
 function createFallingLeaves() {
-    const leaves = ['🍂', '🍁', '🍃', '🌰', '🎃', '🦔', '🦊', '🐿️'];
-    const container = document.body;
-    function createLeaf() {
+    const leaves = ['🍂','🍁','🍃','🌰','🎃','🦔','🦊','🐿️'];
+    function drop() {
         const leaf = document.createElement('div');
         leaf.className = 'leaf';
         leaf.innerHTML = leaves[Math.floor(Math.random() * leaves.length)];
+        leaf.style.position = 'fixed';
+        leaf.style.top = '-10vh';
         leaf.style.left = Math.random() * 100 + 'vw';
-        const duration = Math.random() * 15 + 10;
-        leaf.style.animationDuration = duration + 's';
-        leaf.style.fontSize = (1.5 + Math.random() * 1.5) + 'rem';
-        container.appendChild(leaf);
-        setTimeout(() => leaf.remove(), (duration + 5) * 1000);
+        leaf.style.fontSize = (1 + Math.random() * 1.8) + 'rem';
+        leaf.style.animation = `fall ${10 + Math.random()*10}s linear`;
+        document.body.appendChild(leaf);
+        setTimeout(() => leaf.remove(), 20000);
     }
-    for(let i = 0; i < 25; i++) setTimeout(createLeaf, i * 200);
-    setInterval(createLeaf, 1500);
+    setInterval(drop, 1200);
 }
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', createFallingLeaves);
-} else {
-    createFallingLeaves();
-}
+document.addEventListener("DOMContentLoaded", createFallingLeaves);
 </script>
 """
 
-with gr.Blocks(css=custom_css, theme=gr.themes.Soft(), head=falling_leaves_js) as demo:
-    
-    # HEADER
-    gr.HTML("""
-        <div class='main-box'>
-            <h1 style='font-size: 3.2em; margin: 0;'>🍂 Autumn AI Characters 🍁</h1>
-            <p style='font-size: 1.2em; margin-top: 10px; color: #6D4C41; text-align: center;'>
-                Choose your cozy guide through the fall season
-            </p>
-            <p style='font-size: 1em; color: #8B4513; text-align: center;'>
-                🎃 Three personalities • 🦊 Voice responses • 🍄 LoRA fine-tuned
-            </p>
-        </div>
-    """)
-    
-    # HOW TO USE
-    gr.HTML("""
-        <div class='content-box'>
-            <h3 style='color: #5D4037; margin: 0 0 12px 0;'>🎯 How to Use Your Autumn AI</h3>
-            <p style='color: #6D4C41; font-size: 1.05em; text-align: center; line-height: 1.6;'>
-                🍂 <strong>Step 1:</strong> Select your character below<br>
-                🍁 <strong>Step 2:</strong> Toggle voice if desired<br>
-                🍃 <strong>Step 3:</strong> Type your message and send<br>
-                🎃 <strong>Step 4:</strong> Enjoy the conversation!
-            </p>
-        </div>
-    """)
-    
-    # CHARACTER SELECTION
-    gr.HTML("<h2 style='margin: 25px 0 15px 0;'>🎭 Select Your Character</h2>")
-    character_selector = gr.Radio(
-        choices=list(CHARACTERS.keys()),
-        value="JARVIS",
-        label="",
-        elem_id="character-radio"
-    )
-    
-    # CHARACTER INFO
-    character_info = gr.HTML("""
-        <div class='content-box'>
-            <h3 style='margin: 0 0 10px 0;'>🍂 JARVIS</h3>
-            <p style='color: #6D4C41; font-size: 16px; margin: 5px 0; text-align: center;'>
-                <strong>Sophisticated AI Assistant</strong>
-            </p>
-            <p style='color: #8B4513; font-size: 15px; margin: 5px 0; text-align: center;'>
-                Professional, articulate, British butler-like
-            </p>
-        </div>
-    """)
-    
-    # VOICE TOGGLE
-    with gr.Row():
-        enable_tts = gr.Checkbox(
-            label="🔊 Enable Character Voice (Fast Speed!)",
-            value=True
-        )
-        clear_btn = gr.Button("🔄 New Conversation", variant="secondary")
-    
-    # INPUT BOX
-    gr.HTML("<h3 style='margin: 25px 0 12px 0;'>💬 Type Your Message</h3>")
-    with gr.Row():
-        msg = gr.Textbox(
-            label="",
-            placeholder="Type your message here... 🍂",
-            scale=5,
-            lines=2
-        )
-        submit_btn = gr.Button("Send", scale=1, variant="primary")
-    
-    # CONVERSATION
-    gr.HTML("<h3 style='margin: 25px 0 12px 0;'>💭 Conversation History</h3>")
-    chatbot = gr.Chatbot(
-        label="",
-        height=400,
-        elem_id="chatbot",
-        show_label=False
-    )
-    
-    # AUDIO
-    gr.HTML("<h3 style='margin: 25px 0 12px 0;'>🔊 Character Voice</h3>")
-    audio_output = gr.Audio(
-        label="",
-        type="filepath",
-        autoplay=True,
-        show_label=False
-    )
-    
-    # FOOTER
-    gr.HTML("""
-        <div class='main-box' style='margin-top: 30px;'>
-            <p style='color: #8B4513; font-size: 0.95em; text-align: center; margin: 5px 0;'>
-                🦊 LoRA Fine-tuning • 🐿️ Built with Gradio • 🦔 Fast gTTS
-            </p>
-            
-        </div>
-    """)
-    
-    # INTERACTIONS
-    def update_character_info(character):
-        char_data = CHARACTERS[character]
-        return f"""
-        <div class='content-box'>
-            <h3 style='margin: 0 0 10px 0;'>{char_data['emoji']} {character}</h3>
-            <p style='color: #6D4C41; font-size: 16px; margin: 5px 0; text-align: center;'>
-                <strong>{char_data['description']}</strong>
-            </p>
-            <p style='color: #8B4513; font-size: 15px; margin: 5px 0; text-align: center;'>
-                {char_data['personality']}
-            </p>
-        </div>
-        """
-    
-    character_selector.change(fn=update_character_info, inputs=[character_selector], outputs=[character_info])
-    msg.submit(fn=chat_with_audio, inputs=[msg, chatbot, character_selector, enable_tts], outputs=[chatbot, audio_output]).then(lambda: "", outputs=[msg])
-    submit_btn.click(fn=chat_with_audio, inputs=[msg, chatbot, character_selector, enable_tts], outputs=[chatbot, audio_output]).then(lambda: "", outputs=[msg])
-    clear_btn.click(lambda: ([], None), outputs=[chatbot, audio_output])
 
+# -----------------------------
+# UI LAYOUT (PERFECTLY ALIGNED)
+# -----------------------------
+
+with gr.Blocks(css=custom_css, theme=gr.themes.Soft(), head=falling_leaves_js) as demo:
+
+    # HEADER -----------------------------------------------------
+    with gr.Box(elem_classes="main-box"):
+        gr.HTML("""
+            <h1 style='text-align:center;'>🍂 Autumn AI Characters 🍁</h1>
+            <p style='text-align:center;'>Choose your cozy guide through the fall season</p>
+        """)
+
+    # HOW TO USE -------------------------------------------------
+    with gr.Box(elem_classes="content-box"):
+        gr.HTML("""
+            <h3 style='text-align:center;'>🎯 How to Use Your Autumn AI</h3>
+            <p style='text-align:center;'>
+                🍂 Select a character<br>
+                🍁 Toggle voice if you want<br>
+                🍃 Type your message<br>
+                🎃 Enjoy the conversation!
+            </p>
+        """)
+
+    # CHARACTER SELECTION ----------------------------------------
+    with gr.Box(elem_classes="content-box"):
+        gr.HTML("<h3 style='text-align:center;'>🎭 Select Your Character</h3>")
+        character_selector = gr.Radio(
+            list(CHARACTERS.keys()),
+            value="JARVIS",
+            label="",
+            elem_id="character-radio"
+        )
+
+    # CHARACTER INFO ---------------------------------------------
+    with gr.Box(elem_classes="content-box"):
+        character_info = gr.HTML("")
+
+    # TTS + CLEAR ------------------------------------------------
+    with gr.Box(elem_classes="content-box"):
+        with gr.Row():
+            enable_tts = gr.Checkbox(label="🔊 Enable Voice", value=True)
+            clear_btn = gr.Button("🔄 New Conversation")
+
+    # MESSAGE INPUT ---------------------------------------------
+    with gr.Box(elem_classes="content-box"):
+        gr.HTML("<h3>💬 Type Your Message</h3>")
+        with gr.Row():
+            msg = gr.Textbox(
+                placeholder="Type here... 🍂",
+                lines=2,
+                scale=5
+            )
+            submit_btn = gr.Button("Send", variant="primary", scale=1)
+
+    # CHAT HISTORY ----------------------------------------------
+    with gr.Box(elem_classes="content-box"):
+        gr.HTML("<h3>💭 Conversation History</h3>")
+        chatbot = gr.Chatbot(height=360)
+
+    # AUDIO ------------------------------------------------------
+    with gr.Box(elem_classes="content-box"):
+        gr.HTML("<h3>🔊 Character Voice</h3>")
+        audio_output = gr.Audio(type="filepath", autoplay=True)
+
+    # FOOTER -----------------------------------------------------
+    with gr.Box(elem_classes="main-box"):
+        gr.HTML("<p style='text-align:center;'>🦊 Made with Gradio + LoRA</p>")
+
+
+    # -------------------------
+    # EVENT LOGIC
+    # -------------------------
+
+    def update_character_info(character):
+        c = CHARACTERS[character]
+        return f"""
+            <h3 style='text-align:center;'>{c['emoji']} {character}</h3>
+            <p style='text-align:center;'><strong>{c['description']}</strong></p>
+            <p style='text-align:center;'>{c['personality']}</p>
+        """
+
+    character_selector.change(update_character_info, character_selector, character_info)
+
+    submit_btn.click(
+        chat_with_audio,
+        [msg, chatbot, character_selector, enable_tts],
+        [chatbot, audio_output]
+    ).then(lambda: "", None, msg)
+
+    msg.submit(
+        chat_with_audio,
+        [msg, chatbot, character_selector, enable_tts],
+        [chatbot, audio_output]
+    ).then(lambda: "", None, msg)
+
+    clear_btn.click(lambda: ([], None), None, [chatbot, audio_output])
+
+
+# -----------------------------
+# LAUNCH
+# -----------------------------
 if __name__ == "__main__":
-    demo.launch(share=False, show_error=True, server_name="0.0.0.0", server_port=7860)
+    demo.launch(share=False, server_name="0.0.0.0", server_port=7860)
