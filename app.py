@@ -40,7 +40,7 @@ CHARACTERS = {
         "adapter": "AlissenMoreno61/sarcastic-lora",
         "emoji": "🍃",
         "description": "Witty & Sharp-Tongued",
-        "personality": "Ryan Reynolds wit, cheeky but helpful",
+        "personality": "Wit, cheeky but helpful",
         "voice_speed": 1.1,
         "voice_lang": "en"
     }
