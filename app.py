@@ -25,7 +25,7 @@ CHARACTERS = {
         "emoji": "🍂",
         "description": "Sophisticated AI Assistant",
         "personality": "Professional, articulate, British butler-like",
-        "voice_speed": 0.9,
+        "voice_speed": 1.2,  # Faster
         "voice_lang": "en"
     },
     "Wizard": {
@@ -33,7 +33,7 @@ CHARACTERS = {
         "emoji": "🍁",
         "description": "Mystical Sage of Autumn",
         "personality": "Poetic, uses medieval language, mystical",
-        "voice_speed": 0.8,
+        "voice_speed": 1.1,  # Faster
         "voice_lang": "en"
     },
     "Sarcastic": {
@@ -41,7 +41,7 @@ CHARACTERS = {
         "emoji": "🍃",
         "description": "Witty & Sharp-Tongued",
         "personality": "Wit, cheeky but helpful",
-        "voice_speed": 1.1,
+        "voice_speed": 1.3,  # Faster
         "voice_lang": "en"
     }
 }
@@ -67,10 +67,11 @@ def text_to_speech(text, character):
     """Convert character's response to speech"""
     try:
         char_config = CHARACTERS[character]
+        # Note: gTTS slow parameter is inverse - False = faster
         tts = gTTS(
             text=text,
             lang=char_config["voice_lang"],
-            slow=(char_config["voice_speed"] < 1.0)
+            slow=False  # Always fast
         )
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
             tts.save(fp.name)
@@ -384,7 +385,7 @@ with gr.Blocks(css=custom_css, theme=gr.themes.Soft(), head=falling_leaves_js) a
     
     with gr.Row():
         # Left Sidebar
-        with gr.Column(scale=1, min_width=300):
+        with gr.Column(scale=1, min_width=320):
             gr.HTML("<h2 style='text-align: center; color: #5D4037; margin-bottom: 15px;'>🎭 Select Your Character</h2>")
             
             character_selector = gr.Radio(
@@ -417,19 +418,19 @@ with gr.Blocks(css=custom_css, theme=gr.themes.Soft(), head=falling_leaves_js) a
             
             clear_btn = gr.Button("🔄 New Conversation", variant="secondary", size="lg")
         
-        # Right Main Area - CORRECT ORDER
-        with gr.Column(scale=3):
-            # 1. HOW TO USE BOX - FIRST
+        # Right Main Area - SYMMETRICAL LAYOUT
+        with gr.Column(scale=2):
+            # 1. HOW TO USE BOX
             gr.HTML("""
                 <div class='header-box' style='text-align: center; padding: 25px; margin-bottom: 20px;'>
                     <h3 style='color: #5D4037; margin-bottom: 12px;'>🎯 How to Use Your Autumn AI</h3>
                     <p style='color: #6D4C41; font-size: 1.05em; line-height: 1.8;'>
-                        🍂 Pick your character • 🍁 Toggle voice • 🍃 Type below • 🎃 Chat!
+                        🍂 Pick character • 🍁 Toggle voice • 🍃 Type below • 🎃 Chat!
                     </p>
                 </div>
             """)
             
-            # 2. MESSAGE INPUT - SECOND
+            # 2. MESSAGE INPUT
             gr.HTML("<h3 style='color: #5D4037; margin: 15px 0 10px 0; text-align: center;'>💬 Type Your Message</h3>")
             with gr.Row():
                 msg = gr.Textbox(
@@ -441,7 +442,7 @@ with gr.Blocks(css=custom_css, theme=gr.themes.Soft(), head=falling_leaves_js) a
                 )
                 submit_btn = gr.Button("Send", scale=1, variant="primary")
             
-            # 3. AUDIO - THIRD
+            # 3. AUDIO OUTPUT
             gr.HTML("<h3 style='color: #5D4037; margin: 20px 0 10px 0; text-align: center;'>🔊 Character Voice</h3>")
             audio_output = gr.Audio(
                 label="",
@@ -450,7 +451,7 @@ with gr.Blocks(css=custom_css, theme=gr.themes.Soft(), head=falling_leaves_js) a
                 show_label=False
             )
             
-            # 4. CONVERSATION - LAST
+            # 4. CONVERSATION HISTORY
             gr.HTML("<h3 style='color: #5D4037; margin: 20px 0 10px 0; text-align: center;'>💭 Conversation History</h3>")
             chatbot = gr.Chatbot(
                 label="",
