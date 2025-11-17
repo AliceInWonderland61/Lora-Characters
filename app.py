@@ -22,7 +22,7 @@ tokenizer.pad_token = tokenizer.eos_token
 
 CHARACTERS = {
     "JARVIS": {
-        "adapter": "your-username/jarvis-lora",
+        "adapter": "AlissenMoreno61/jarvis-lora",
         "emoji": "🍂",
         "description": "Sophisticated AI Assistant",
         "color": "#4B8BBE",
@@ -30,7 +30,7 @@ CHARACTERS = {
         "voice_lang": "en"
     },
     "Wizard": {
-        "adapter": "your-username/wizard-lora",
+        "adapter": "AlissenMoreno61/wizard-lora",
         "emoji": "🍁",
         "description": "Mystical Sage of Autumn",
         "color": "#9B59B6",
@@ -38,7 +38,7 @@ CHARACTERS = {
         "voice_lang": "en"
     },
     "Sarcastic": {
-        "adapter": "your-username/sarcastic-lora",
+        "adapter": "AlissenMoreno61/sarcastic-lora",
         "emoji": "🍃",
         "description": "Witty & Sharp-Tongued",
         "color": "#E67E22",
