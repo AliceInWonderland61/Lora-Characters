@@ -1,5 +1,5 @@
 """
-Autumn AI Character Chatbot (Perfectly Aligned Version)
+Autumn AI Character Chatbot (Perfectly Aligned - Gradio 3 Compatible)
 """
 
 import gradio as gr
@@ -71,7 +71,7 @@ def chat_with_audio(message, history, character, enable_tts):
 
     model = load_character_model(character)
 
-    # build conversation
+    # Build conversation history
     messages = []
     for h in history:
         messages.append({"role": "user", "content": h[0]})
@@ -100,7 +100,7 @@ def chat_with_audio(message, history, character, enable_tts):
 
 
 # -----------------------------
-# CSS + FALLING LEAVES
+# CSS
 # -----------------------------
 
 custom_css = """
@@ -121,47 +121,27 @@ custom_css = """
 }
 
 footer { display: none !important; }
-#character-radio label { text-align: center !important; }
-"""
 
-falling_leaves_js = """
-<script>
-function createFallingLeaves() {
-    const leaves = ['🍂','🍁','🍃','🌰','🎃','🦔','🦊','🐿️'];
-    function drop() {
-        const leaf = document.createElement('div');
-        leaf.className = 'leaf';
-        leaf.innerHTML = leaves[Math.floor(Math.random() * leaves.length)];
-        leaf.style.position = 'fixed';
-        leaf.style.top = '-10vh';
-        leaf.style.left = Math.random() * 100 + 'vw';
-        leaf.style.fontSize = (1 + Math.random() * 1.8) + 'rem';
-        leaf.style.animation = `fall ${10 + Math.random()*10}s linear`;
-        document.body.appendChild(leaf);
-        setTimeout(() => leaf.remove(), 20000);
-    }
-    setInterval(drop, 1200);
+#character-radio label {
+    text-align:center !important;
 }
-document.addEventListener("DOMContentLoaded", createFallingLeaves);
-</script>
 """
 
-
 # -----------------------------
-# UI LAYOUT (PERFECTLY ALIGNED)
+# UI LAYOUT (Perfectly Aligned)
 # -----------------------------
 
-with gr.Blocks(css=custom_css, theme=gr.themes.Soft(), head=falling_leaves_js) as demo:
+with gr.Blocks(css=custom_css, theme=gr.themes.Soft()) as demo:
 
     # HEADER -----------------------------------------------------
-    with gr.Box(elem_classes="main-box"):
+    with gr.Group(elem_classes="main-box"):
         gr.HTML("""
             <h1 style='text-align:center;'>🍂 Autumn AI Characters 🍁</h1>
             <p style='text-align:center;'>Choose your cozy guide through the fall season</p>
         """)
 
     # HOW TO USE -------------------------------------------------
-    with gr.Box(elem_classes="content-box"):
+    with gr.Group(elem_classes="content-box"):
         gr.HTML("""
             <h3 style='text-align:center;'>🎯 How to Use Your Autumn AI</h3>
             <p style='text-align:center;'>
@@ -172,8 +152,8 @@ with gr.Blocks(css=custom_css, theme=gr.themes.Soft(), head=falling_leaves_js) a
             </p>
         """)
 
-    # CHARACTER SELECTION ----------------------------------------
-    with gr.Box(elem_classes="content-box"):
+    # CHARACTER SELECTOR ----------------------------------------
+    with gr.Group(elem_classes="content-box"):
         gr.HTML("<h3 style='text-align:center;'>🎭 Select Your Character</h3>")
         character_selector = gr.Radio(
             list(CHARACTERS.keys()),
@@ -183,40 +163,39 @@ with gr.Blocks(css=custom_css, theme=gr.themes.Soft(), head=falling_leaves_js) a
         )
 
     # CHARACTER INFO ---------------------------------------------
-    with gr.Box(elem_classes="content-box"):
+    with gr.Group(elem_classes="content-box"):
         character_info = gr.HTML("")
 
     # TTS + CLEAR ------------------------------------------------
-    with gr.Box(elem_classes="content-box"):
+    with gr.Group(elem_classes="content-box"):
         with gr.Row():
             enable_tts = gr.Checkbox(label="🔊 Enable Voice", value=True)
             clear_btn = gr.Button("🔄 New Conversation")
 
     # MESSAGE INPUT ---------------------------------------------
-    with gr.Box(elem_classes="content-box"):
+    with gr.Group(elem_classes="content-box"):
         gr.HTML("<h3>💬 Type Your Message</h3>")
         with gr.Row():
             msg = gr.Textbox(
-                placeholder="Type here... 🍂",
+                placeholder="Type your message here... 🍂",
                 lines=2,
                 scale=5
             )
             submit_btn = gr.Button("Send", variant="primary", scale=1)
 
     # CHAT HISTORY ----------------------------------------------
-    with gr.Box(elem_classes="content-box"):
+    with gr.Group(elem_classes="content-box"):
         gr.HTML("<h3>💭 Conversation History</h3>")
         chatbot = gr.Chatbot(height=360)
 
-    # AUDIO ------------------------------------------------------
-    with gr.Box(elem_classes="content-box"):
+    # AUDIO OUTPUT ----------------------------------------------
+    with gr.Group(elem_classes="content-box"):
         gr.HTML("<h3>🔊 Character Voice</h3>")
         audio_output = gr.Audio(type="filepath", autoplay=True)
 
     # FOOTER -----------------------------------------------------
-    with gr.Box(elem_classes="main-box"):
+    with gr.Group(elem_classes="main-box"):
         gr.HTML("<p style='text-align:center;'>🦊 Made with Gradio + LoRA</p>")
-
 
     # -------------------------
     # EVENT LOGIC
