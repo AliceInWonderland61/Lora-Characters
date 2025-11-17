@@ -1,115 +1,269 @@
-import gradio as gr
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from peft import PeftModel
-
-BASE_MODEL = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
-
-LORA_ADAPTERS = {
-    "Jarvis": "AlissenMoreno61/jarvis-lora",
-    "Sarcastic": "AlissenMoreno61/sarcastic-lora",
-    "Wizard": "AlissenMoreno61/wizard-lora"
-}
-
-print("Loading base model…")
-tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
-model = AutoModelForCausalLM.from_pretrained(
-    BASE_MODEL,
-    torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
-    device_map="auto"
-)
-
-def load_adapter(name):
-    print(f"Loading adapter: {name}")
-    return PeftModel.from_pretrained(model, LORA_ADAPTERS[name])
-
-current_adapter = load_adapter("Jarvis")
-
-def chat_fn(history, message, persona):
-    global current_adapter
-    current_adapter = load_adapter(persona)
-
-    inputs = tokenizer(message, return_tensors="pt").to(model.device)
-    outputs = current_adapter.generate(
-        **inputs,
-        max_new_tokens=200,
-        temperature=0.8,
-        do_sample=True
-    )
-    reply = tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-    history.append({"role": "user", "content": message})
-    history.append({"role": persona, "content": reply})
-    return history, ""
-
-
-# ==============================
-#  FRONTEND + LEAVES + FONTS
-# ==============================
-HEADER_HTML = """
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Poppins:wght@400;600&family=Cormorant+Garamond:wght@500;700&display=swap" rel="stylesheet">
-
-<div id="falling-leaves"></div>
-
-<script>
-// FALLING LEAVES
-const leafImgs = [
-    "/file/leaves/leaf1.png",
-    "/file/leaves/leaf2.png",
-    "/file/leaves/leaf3.png",
-    "/file/leaves/leaf4.png"
-];
-
-
-function spawnLeaf() {
-    const leaf = document.createElement("img");
-    leaf.src = leafImgs[Math.floor(Math.random() * leafImgs.length)];
-    leaf.classList.add("leaf");
-    leaf.style.left = Math.random() * 100 + "vw";
-    leaf.style.animationDuration = (6 + Math.random() * 6) + "s";
-    leaf.style.width = (20 + Math.random() * 25) + "px";
-    leafContainer.appendChild(leaf);
-
-    setTimeout(() => leaf.remove(), 12000);
-}
-setInterval(spawnLeaf, 450);
-
-// PERSONA FONT SWITCH (no Gradio JS hook)
-document.addEventListener("click", () => {
-    const selected = document.querySelector("input[type=radio][name=radio]:checked");
-    if (!selected) return;
-    const persona = selected.value;
-
-    const box = document.querySelector("textarea");
-    if (!box) return;
-
-    box.classList.remove("jarvis-text","sarcastic-text","wizard-text");
-
-    if (persona === "Jarvis") box.classList.add("jarvis-text");
-    if (persona === "Sarcastic") box.classList.add("sarcastic-text");
-    if (persona === "Wizard") box.classList.add("wizard-text");
-});
-</script>
+"""
+Fall-Themed Character Chatbot
+Hugging Face Space Application
 """
 
-with gr.Blocks(css="custom.css") as ui:
+import gradio as gr
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import PeftModel
+import random
 
-    gr.HTML(HEADER_HTML)
+# ============================================================================
+# MODEL LOADING
+# ============================================================================
 
-    persona = gr.Radio(
-        ["Jarvis", "Sarcastic", "Wizard"],
-        label="Choose Character",
-        value="Jarvis"
+MODEL_NAME = "Qwen/Qwen2-0.5B-Instruct"
+
+# Load tokenizer once
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, trust_remote_code=True)
+tokenizer.pad_token = tokenizer.eos_token
+
+# Character configurations
+CHARACTERS = {
+    "JARVIS": {
+        "adapter": "your-username/jarvis-lora",  # Replace with your HF repo
+        "emoji": "🍂",
+        "description": "Sophisticated AI Assistant",
+        "color": "#4B8BBE"
+    },
+    "Wizard": {
+        "adapter": "your-username/wizard-lora",  # Replace with your HF repo
+        "emoji": "🍁",
+        "description": "Mystical Sage of Autumn",
+        "color": "#9B59B6"
+    },
+    "Sarcastic": {
+        "adapter": "your-username/sarcastic-lora",  # Replace with your HF repo
+        "emoji": "🍃",
+        "description": "Witty & Sharp-Tongued",
+        "color": "#E67E22"
+    }
+}
+
+# Cache for loaded models
+model_cache = {}
+
+def load_character_model(character):
+    """Load or retrieve cached character model"""
+    if character not in model_cache:
+        print(f"Loading {character}...")
+        
+        # Load base model
+        base_model = AutoModelForCausalLM.from_pretrained(
+            MODEL_NAME,
+            torch_dtype=torch.float16,
+            device_map="auto",
+            trust_remote_code=True
+        )
+        
+        # Load LoRA adapter
+        model = PeftModel.from_pretrained(
+            base_model,
+            CHARACTERS[character]["adapter"]
+        )
+        model.eval()
+        
+        model_cache[character] = model
+        print(f"✅ {character} loaded!")
+    
+    return model_cache[character]
+
+# ============================================================================
+# CHAT FUNCTION
+# ============================================================================
+
+def chat(message, history, character):
+    """Generate response from selected character"""
+    
+    if not message.strip():
+        return history
+    
+    # Load character model
+    model = load_character_model(character)
+    
+    # Format chat history
+    messages = []
+    for h in history:
+        messages.append({"role": "user", "content": h[0]})
+        messages.append({"role": "assistant", "content": h[1]})
+    messages.append({"role": "user", "content": message})
+    
+    # Apply chat template
+    prompt = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
     )
-
-    chatbot = gr.Chatbot(type="messages", height=350)
-    msg = gr.Textbox(label="Your message", placeholder="Type here… 🍁")
-    send_btn = gr.Button("Send")
-
-    send_btn.click(
-        chat_fn,
-        inputs=[chatbot, msg, persona],
-        outputs=[chatbot, msg]
+    
+    # Generate response
+    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    
+    with torch.no_grad():
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=150,
+            do_sample=True,
+            temperature=0.7,
+            top_p=0.9,
+            repetition_penalty=1.1,
+            pad_token_id=tokenizer.eos_token_id
+        )
+    
+    response = tokenizer.decode(
+        outputs[0][len(inputs['input_ids'][0]):],
+        skip_special_tokens=True
     )
+    
+    # Update history
+    history.append((message, response))
+    return history
 
-ui.launch()
+# ============================================================================
+# GRADIO INTERFACE
+# ============================================================================
+
+# Custom CSS for fall theme
+custom_css = """
+#main-container {
+    background: linear-gradient(135deg, #FFF8DC 0%, #FFE4B5 50%, #FFDAB9 100%);
+}
+
+.gradio-container {
+    font-family: 'Arial', sans-serif;
+}
+
+#character-selector button {
+    border-radius: 15px;
+    padding: 15px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+#character-selector button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.message {
+    border-radius: 15px;
+    padding: 10px 15px;
+    margin: 5px;
+}
+
+#chatbot {
+    border-radius: 20px;
+    border: 3px solid #CD853F;
+    overflow: hidden;
+}
+
+footer {
+    display: none !important;
+}
+"""
+
+# Build interface
+with gr.Blocks(css=custom_css, theme=gr.themes.Soft()) as demo:
+    
+    gr.Markdown(
+        """
+        # 🍂 Autumn AI Characters 🍁
+        ### Choose your guide through the fall season
+        
+        Experience three distinct AI personalities, each fine-tuned with LoRA adapters!
+        """
+    )
+    
+    with gr.Row():
+        with gr.Column(scale=1):
+            character_selector = gr.Radio(
+                choices=list(CHARACTERS.keys()),
+                value="JARVIS",
+                label="🎭 Select Character",
+                elem_id="character-selector"
+            )
+            
+            gr.Markdown("### Character Info")
+            character_info = gr.Markdown(
+                f"""
+                **{CHARACTERS['JARVIS']['emoji']} JARVIS**
+                
+                {CHARACTERS['JARVIS']['description']}
+                """
+            )
+            
+            clear_btn = gr.Button("🔄 New Conversation", variant="secondary")
+        
+        with gr.Column(scale=3):
+            chatbot = gr.Chatbot(
+                label="Chat",
+                height=500,
+                elem_id="chatbot",
+                bubble_full_width=False
+            )
+            
+            with gr.Row():
+                msg = gr.Textbox(
+                    label="Your Message",
+                    placeholder="Type your message here...",
+                    scale=4,
+                    lines=1
+                )
+                submit_btn = gr.Button("Send 🚀", scale=1, variant="primary")
+    
+    gr.Markdown(
+        """
+        ---
+        🍂 **Powered by LoRA Fine-tuning** 🍁 Built with Hugging Face Transformers 🍃
+        
+        Each character is a specialized adapter trained on unique personality data!
+        """
+    )
+    
+    # Update character info when selection changes
+    def update_character_info(character):
+        char_data = CHARACTERS[character]
+        return f"""
+        **{char_data['emoji']} {character}**
+        
+        {char_data['description']}
+        """
+    
+    character_selector.change(
+        fn=update_character_info,
+        inputs=[character_selector],
+        outputs=[character_info]
+    )
+    
+    # Chat interactions
+    msg.submit(
+        fn=chat,
+        inputs=[msg, chatbot, character_selector],
+        outputs=[chatbot]
+    ).then(
+        lambda: "",
+        outputs=[msg]
+    )
+    
+    submit_btn.click(
+        fn=chat,
+        inputs=[msg, chatbot, character_selector],
+        outputs=[chatbot]
+    ).then(
+        lambda: "",
+        outputs=[msg]
+    )
+    
+    clear_btn.click(lambda: [], outputs=[chatbot])
+
+# ============================================================================
+# LAUNCH
+# ============================================================================
+
+if __name__ == "__main__":
+    demo.launch(
+        share=False,
+        show_error=True,
+        server_name="0.0.0.0",
+        server_port=7860
+    )
