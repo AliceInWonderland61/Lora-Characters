@@ -1,38 +1,38 @@
-/* Autumn AI Character Chatbot - Smokey Orange Theme */
+/* Pink Pastel Character Chatbot Theme */
 
-/* Main gradient background - Blue-gray to warm cream */
+/* Main gradient background - Soft pink gradient */
 .gradio-container {
-    background: linear-gradient(135deg, #8B9DAF, #E8DDD3) !important;
+    background: linear-gradient(135deg, #FFE5EC, #FFC9DD, #FFB3D9) !important;
     font-family: 'Georgia', serif;
 }
 
-/* Main card styling - Warm cream background */
+/* Main card styling - Light pink background */
 .main-card {
     max-width: 1100px !important;
     margin: 20px auto !important;
     padding: 25px !important;
-    background: rgba(245, 240, 235, 0.95) !important;
+    background: rgba(255, 240, 245, 0.95) !important;
     border-radius: 22px !important;
-    border: 3px solid #8B6F47 !important;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.25) !important;
+    border: 3px solid #FFB3D9 !important;
+    box-shadow: 0 6px 18px rgba(255, 182, 193, 0.3) !important;
 }
 
-/* Character buttons - Burnt orange gradient */
+/* Character buttons - Rose pink */
 .character-btn button {
     width: 100%;
     font-size: 18px !important;
     padding: 14px !important;
     border-radius: 14px !important;
-    background: linear-gradient(135deg, #D97A3A, #C85A28) !important;
-    border: 2px solid #8B6F47 !important;
-    color: #F5F0EB !important;
+    background: linear-gradient(135deg, #FFB3D9, #FF85B3) !important;
+    border: 2px solid #FF69B4 !important;
+    color: white !important;
     font-weight: 600 !important;
 }
 
 .character-btn button:hover {
-    background: linear-gradient(135deg, #E68A4A, #D86A38) !important;
+    background: linear-gradient(135deg, #FFC9E0, #FF99C2) !important;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+    box-shadow: 0 4px 8px rgba(255, 105, 180, 0.3) !important;
 }
 
 /* AGGRESSIVE OVERRIDES FOR ALL GRAY/DARK BACKGROUNDS */
@@ -59,56 +59,56 @@ div, section, article, aside, nav, main,
     background-color: transparent !important;
 }
 
-/* Character button row - Bronze tone background */
+/* Character button row - Light pink background */
 .gradio-row, [class*="gradio-row"] {
-    background: rgba(139, 111, 71, 0.15) !important;
+    background: rgba(255, 192, 203, 0.2) !important;
     padding: 10px !important;
     border-radius: 14px !important;
 }
 
-/* Input textbox and textarea - Warm cream */
+/* Input textbox and textarea - Very light pink */
 input, textarea, select,
 .input-text, .textbox,
 [class*="input"], [class*="textbox"],
 input[type="text"], textarea[class*="scroll"] {
-    background: #F5F0EB !important;
-    background-color: #F5F0EB !important;
-    color: #3D3D3D !important;
-    border: 2px solid #8B6F47 !important;
+    background: #FFF5F7 !important;
+    background-color: #FFF5F7 !important;
+    color: #8B4789 !important;
+    border: 2px solid #FFB3D9 !important;
 }
 
-/* Chatbot container - Dark slate blue */
+/* Chatbot container - Soft lavender pink */
 .chatbot, [data-testid="chatbot"],
 .chatbot *, [data-testid="chatbot"] *,
 .message-wrap, .message, .message-row,
 [class*="chatbot"], [class*="message"] {
-    background: #3D4F5C !important;
-    background-color: #3D4F5C !important;
-    color: #E8DDD3 !important;
+    background: #F8E8F5 !important;
+    background-color: #F8E8F5 !important;
+    color: #8B4789 !important;
 }
 
 /* Individual chat messages */
 .user-message, .bot-message,
 [class*="user"], [class*="bot"],
 .message.user, .message.bot {
-    background: rgba(139, 111, 71, 0.3) !important;
+    background: rgba(255, 192, 203, 0.3) !important;
     border-radius: 8px !important;
     padding: 8px !important;
 }
 
-/* Headers and labels - Dark gray */
+/* Headers and labels - Deep pink */
 h1, h2, h3, h4, h5, h6 {
-    color: #3D3D3D !important;
+    color: #C94B8B !important;
     background: transparent !important;
 }
 
 label, span, p {
-    color: #3D3D3D !important;
+    color: #8B4789 !important;
 }
 
-/* Button styling - Burnt orange */
+/* Button styling - Pink */
 button {
-    background: #D97A3A !important;
+    background: #FF85B3 !important;
     color: white !important;
     border: none !important;
     border-radius: 8px !important;
@@ -116,47 +116,47 @@ button {
 }
 
 button:hover {
-    background: #C85A28 !important;
+    background: #FF99C2 !important;
 }
 
 /* Send button specific styling */
 button[variant="primary"] {
-    background: #D97A3A !important;
+    background: #FF85B3 !important;
 }
 
 /* Audio component */
 audio, [class*="audio"] {
-    background: #F5F0EB !important;
+    background: #FFF5F7 !important;
 }
 
 /* Checkbox */
 input[type="checkbox"] {
-    accent-color: #D97A3A !important;
+    accent-color: #FF85B3 !important;
 }
 
 /* Override any remaining dark/gray backgrounds */
 .dark, [class*="dark"],
 .bg-gray, [class*="bg-gray"],
 .bg-slate, [class*="bg-slate"] {
-    background: #F5F0EB !important;
-    background-color: #F5F0EB !important;
+    background: #FFF5F7 !important;
+    background-color: #FFF5F7 !important;
 }
 
-/* New Conversation button - Rust/brick color */
+/* New Conversation button - Mauve pink */
 .clear-btn button, button:has(svg) {
-    background: #A4483D !important;
+    background: #D291BC !important;
     color: white !important;
 }
 
 .clear-btn button:hover {
-    background: #8B3A30 !important;
+    background: #C77FA8 !important;
 }
 
 /* Group elements (the boxes around sections) */
 .gr-group, [class*="gr-group"],
 .group, [class*="Group"] {
-    background: rgba(245, 240, 235, 0.95) !important;
-    border: 3px solid #8B6F47 !important;
+    background: rgba(255, 240, 245, 0.95) !important;
+    border: 3px solid #FFB3D9 !important;
     border-radius: 22px !important;
     padding: 20px !important;
 }
