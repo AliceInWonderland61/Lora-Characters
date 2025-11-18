@@ -113,9 +113,32 @@ custom_css = """
     border-radius: 14px !important;
     background: #FCE8D8 !important;
     border: 2px solid #C88F6A !important;
+    color: #5C4033 !important;
 }
 .character-btn button:hover {
     background: #F7D9C4 !important;
+}
+
+/* Override dark/gray backgrounds with warm autumn tones */
+input, textarea, select, .input-text, textbox {
+    background: #FFF5E6 !important;
+    color: #5C4033 !important;
+    border: 2px solid #E8D4C0 !important;
+}
+
+/* Chat messages and chatbot area */
+.chatbot, .message-wrap, .message {
+    background: #FFF5E6 !important;
+}
+
+/* Update all headers */
+h2, h3, h4, label {
+    color: #5C4033 !important;
+}
+
+/* Audio player and checkbox area */
+.checkbox-label, audio {
+    background: transparent !important;
 }
 """
 
