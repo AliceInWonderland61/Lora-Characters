@@ -1,5 +1,5 @@
 """
-Autumn AI Character Chatbot — Clean Button Layout (Gradio 3 Compatible)
+Autumn AI Character Chatbot — Light Autumn Air Theme 🍂✨
 """
 
 import gradio as gr
@@ -9,9 +9,9 @@ from peft import PeftModel
 from gtts import gTTS
 import tempfile
 
-# -----------------------------
-# MODEL + CHARACTER CONFIG
-# -----------------------------
+# ----------------------------------
+# MODEL + CHARACTERS
+# ----------------------------------
 
 MODEL_NAME = "Qwen/Qwen2-0.5B-Instruct"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, trust_remote_code=True)
@@ -36,16 +36,17 @@ model_cache = {}
 
 def load_character_model(character):
     if character not in model_cache:
-        base_model = AutoModelForCausalLM.from_pretrained(
+        base = AutoModelForCausalLM.from_pretrained(
             MODEL_NAME,
             torch_dtype=torch.float16,
             device_map="auto",
             trust_remote_code=True
         )
-        model = PeftModel.from_pretrained(base_model, CHARACTERS[character]["adapter"])
+        model = PeftModel.from_pretrained(base, CHARACTERS[character]["adapter"])
         model.eval()
         model_cache[character] = model
     return model_cache[character]
+
 
 def text_to_speech(text):
     try:
@@ -56,6 +57,7 @@ def text_to_speech(text):
     except:
         return None
 
+
 def chat_fn(message, history, character, enable_tts):
     if not message.strip():
         return history, None
@@ -63,12 +65,14 @@ def chat_fn(message, history, character, enable_tts):
     model = load_character_model(character)
 
     messages = []
-    for h in history:
-        messages.append({"role": "user", "content": h[0]})
-        messages.append({"role": "assistant", "content": h[1]})
+    for u, a in history:
+        messages.append({"role": "user", "content": u})
+        messages.append({"role": "assistant", "content": a})
     messages.append({"role": "user", "content": message})
 
-    prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    prompt = tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
     with torch.no_grad():
@@ -80,231 +84,170 @@ def chat_fn(message, history, character, enable_tts):
             pad_token_id=tokenizer.eos_token_id
         )
 
-    response = tokenizer.decode(outputs[0][len(inputs["input_ids"][0]):], skip_special_tokens=True)
+    response = tokenizer.decode(
+        outputs[0][len(inputs["input_ids"][0]):], skip_special_tokens=True
+    )
+
     history.append((message, response))
 
     audio = text_to_speech(response) if enable_tts else None
     return history, audio
 
-# -----------------------------
-# PINK PASTEL CSS THEME
-# -----------------------------
+
+# ----------------------------------
+# LIGHT AUTUMN AIR CSS 🍂
+# ----------------------------------
 
 custom_css = """
-/* Pink Pastel Character Chatbot Theme */
-
-/* Main gradient background - Soft pink gradient */
+/* ---------------------------
+   LIGHT AUTUMN AIR THEME 🍂🍁
+   Soft, cozy, airy fall colors
+   --------------------------- */
 .gradio-container {
-    background: linear-gradient(135deg, #FFE5EC, #FFC9DD, #FFB3D9) !important;
+    background: linear-gradient(135deg, #8A9BB3 0%, #F7E9D5 40%, #FAF4EC 100%) !important;
     font-family: 'Georgia', serif;
 }
 
-/* Main card styling - Light pink background */
-.main-card {
+/* Warm card containers */
+.main-card, .gr-group {
     max-width: 1100px !important;
     margin: 20px auto !important;
     padding: 25px !important;
-    background: rgba(255, 240, 245, 0.95) !important;
+    background: rgba(250, 244, 236, 0.96) !important;
     border-radius: 22px !important;
-    border: 3px solid #FFB3D9 !important;
-    box-shadow: 0 6px 18px rgba(255, 182, 193, 0.3) !important;
+    border: 3px solid #9A6A3A !important;
+    box-shadow: 0 6px 18px rgba(70, 83, 102, 0.25) !important;
 }
 
-/* Character buttons - Rose pink */
+/* Character buttons */
 .character-btn button {
     width: 100%;
     font-size: 18px !important;
     padding: 14px !important;
     border-radius: 14px !important;
-    background: linear-gradient(135deg, #FFB3D9, #FF85B3) !important;
-    border: 2px solid #FF69B4 !important;
-    color: white !important;
+
+    background: linear-gradient(135deg, #D57400, #E18E34) !important;
+    border: 2px solid #A53A1A !important;
+    color: #FAF4EC !important;
     font-weight: 600 !important;
 }
-
 .character-btn button:hover {
-    background: linear-gradient(135deg, #FFC9E0, #FF99C2) !important;
+    background: linear-gradient(135deg, #E89C40, #F0A857) !important;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(255, 105, 180, 0.3) !important;
+    box-shadow: 0 4px 8px rgba(165, 58, 26, 0.25) !important;
 }
 
-/* AGGRESSIVE OVERRIDES FOR ALL GRAY/DARK BACKGROUNDS */
-
-/* Target all possible container elements */
-div, section, article, aside, nav, main,
-.block, .panel, .form, .container,
-[class*="Block"], [class*="block"],
-[class*="Container"], [class*="container"],
-[data-testid*="block"], [data-testid*="column"] {
-    background-color: transparent !important;
-}
-
-/* Specifically target the gray rows */
-.row, [class*="row"], [data-testid*="row"] {
-    background: transparent !important;
-    background-color: transparent !important;
-}
-
-/* Target columns */
-.column, [class*="column"], [data-testid*="column"],
-.gr-column, [class*="gr-column"] {
-    background: transparent !important;
-    background-color: transparent !important;
-}
-
-/* Character button row - Light pink background */
-.gradio-row, [class*="gradio-row"] {
-    background: rgba(255, 192, 203, 0.2) !important;
-    padding: 10px !important;
-    border-radius: 14px !important;
-}
-
-/* Input textbox and textarea - Very light pink */
-input, textarea, select,
-.input-text, .textbox,
-[class*="input"], [class*="textbox"],
-input[type="text"], textarea[class*="scroll"] {
-    background: #FFF5F7 !important;
-    background-color: #FFF5F7 !important;
-    color: #8B4789 !important;
-    border: 2px solid #FFB3D9 !important;
-}
-
-/* Chatbot container - Soft lavender pink */
-.chatbot, [data-testid="chatbot"],
-.chatbot *, [data-testid="chatbot"] *,
-.message-wrap, .message, .message-row,
-[class*="chatbot"], [class*="message"] {
-    background: #F8E8F5 !important;
-    background-color: #F8E8F5 !important;
-    color: #8B4789 !important;
-}
-
-/* Individual chat messages */
-.user-message, .bot-message,
-[class*="user"], [class*="bot"],
-.message.user, .message.bot {
-    background: rgba(255, 192, 203, 0.3) !important;
-    border-radius: 8px !important;
-    padding: 8px !important;
-}
-
-/* Headers and labels - Deep pink */
-h1, h2, h3, h4, h5, h6 {
-    color: #C94B8B !important;
-    background: transparent !important;
-}
-
-label, span, p {
-    color: #8B4789 !important;
-}
-
-/* Button styling - Pink */
+/* Standard buttons */
 button {
-    background: #FF85B3 !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 8px !important;
+    background: #D57400 !important;
+    border-radius: 10px !important;
+    border: 2px solid #A53A1A !important;
+    color: #FAF4EC !important;
     font-weight: 600 !important;
 }
-
 button:hover {
-    background: #FF99C2 !important;
+    background: #E18E34 !important;
 }
 
-/* Send button specific styling */
-button[variant="primary"] {
-    background: #FF85B3 !important;
+/* Inputs */
+input, textarea {
+    background: #FAF4EC !important;
+    border: 2px solid #9A6A3A !important;
+    color: #465366 !important;
+    border-radius: 12px !important;
 }
 
-/* Audio component */
-audio, [class*="audio"] {
-    background: #FFF5F7 !important;
+/* Chatbot area */
+.chatbot, [data-testid="chatbot"] {
+    background: #F2E8DC !important;
+    color: #3A4654 !important;
+    border-radius: 12px !important;
+    border: 2px solid #CFA97B !important;
+}
+
+/* Chat messages */
+.message.user {
+    background: #E0C9A6 !important;
+    color: #3E4654 !important;
+    border-radius: 10px !important;
+}
+.message.bot {
+    background: #F6EAD9 !important;
+    border-radius: 10px !important;
+    color: #3E4654 !important;
+}
+
+/* Text + Headers */
+h1, h2, h3, label, p, span {
+    color: #465366 !important;
 }
 
 /* Checkbox */
 input[type="checkbox"] {
-    accent-color: #FF85B3 !important;
+    accent-color: #D57400 !important;
 }
 
-/* Override any remaining dark/gray backgrounds */
-.dark, [class*="dark"],
-.bg-gray, [class*="bg-gray"],
-.bg-slate, [class*="bg-slate"] {
-    background: #FFF5F7 !important;
-    background-color: #FFF5F7 !important;
-}
-
-/* New Conversation button - Mauve pink */
-.clear-btn button, button:has(svg) {
-    background: #D291BC !important;
-    color: white !important;
-}
-
-.clear-btn button:hover {
-    background: #C77FA8 !important;
-}
-
-/* Group elements (the boxes around sections) */
-.gr-group, [class*="gr-group"],
-.group, [class*="Group"] {
-    background: rgba(255, 240, 245, 0.95) !important;
-    border: 3px solid #FFB3D9 !important;
-    border-radius: 22px !important;
-    padding: 20px !important;
+/* Audio */
+audio {
+    background: #FAF4EC !important;
+    border-radius: 12px !important;
+    border: 2px solid #A53A1A !important;
 }
 """
 
-# -----------------------------
-# UI LAYOUT (buttons + two columns)
-# -----------------------------
+
+# ----------------------------------
+# UI LAYOUT
+# ----------------------------------
 
 with gr.Blocks(css=custom_css) as demo:
 
-    # MAIN CARD ---------------------------------------------------
+    # MAIN CARD -------------------------------
     with gr.Group(elem_classes="main-card"):
 
         gr.HTML("<h2 style='text-align:center;'>🍂 Choose Your Character</h2>")
 
-        # CHARACTER BUTTONS ROW
+        # Character Buttons
         with gr.Row():
             char_buttons = []
-            for c in CHARACTERS.keys():
-                btn = gr.Button(f"{CHARACTERS[c]['emoji']} {c}", elem_classes="character-btn")
-                char_buttons.append(btn)
+            for name in CHARACTERS.keys():
+                b = gr.Button(
+                    f"{CHARACTERS[name]['emoji']} {name}",
+                    elem_classes="character-btn"
+                )
+                char_buttons.append(b)
 
-        # Hidden variable to store selected character
         character_state = gr.State("JARVIS")
 
-        # Link buttons to character state
         for btn, name in zip(char_buttons, CHARACTERS.keys()):
             btn.click(lambda x=name: x, outputs=character_state)
 
-        # TWO-COLUMN CHAT AREA
+        # Chat columns (side by side)
         with gr.Row():
 
-            # LEFT — message input
+            # LEFT: Message input
             with gr.Column(scale=4):
-                msg = gr.Textbox(label="💬 Type your message", lines=3)
+                msg = gr.Textbox(
+                    label="💬 Type your message",
+                    lines=3,
+                    placeholder="Say something..."
+                )
                 submit_btn = gr.Button("Send", variant="primary")
 
-            # RIGHT — conversation
+            # RIGHT: Chat
             with gr.Column(scale=6):
                 chatbot = gr.Chatbot(height=400)
 
-    # AUDIO BOX ---------------------------------------------------
+    # AUDIO PANEL -----------------------------
     with gr.Group(elem_classes="main-card"):
         enable_tts = gr.Checkbox(label="🔊 Enable Voice", value=True)
         audio_output = gr.Audio(type="filepath", autoplay=True, label="Character Voice Output")
 
-    # RESET BUTTON ------------------------------------------------
+    # RESET -----------------------------------
     with gr.Group(elem_classes="main-card"):
         clear_btn = gr.Button("🔄 New Conversation")
 
-    # -------------------------
-    # Event Logic
-    # -------------------------
-
+    # Logic
     submit_btn.click(
         chat_fn,
         inputs=[msg, chatbot, character_state, enable_tts],
@@ -319,9 +262,10 @@ with gr.Blocks(css=custom_css) as demo:
 
     clear_btn.click(lambda: ([], None), outputs=[chatbot, audio_output])
 
-# -----------------------------
-# RUN
-# -----------------------------
+
+# ----------------------------------
+# LAUNCH
+# ----------------------------------
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860)
