@@ -91,37 +91,40 @@ def chat_fn(message, history, character, enable_tts):
 # -----------------------------
 
 custom_css = """
-/* Autumn AI Character Chatbot - Custom Theme */
+/* Autumn AI Character Chatbot - Smokey Orange Theme */
 
-/* Main gradient background */
+/* Main gradient background - Blue-gray to warm cream */
 .gradio-container {
-    background: linear-gradient(135deg, #D9A7C7, #FFFCDC) !important;
+    background: linear-gradient(135deg, #8B9DAF, #E8DDD3) !important;
     font-family: 'Georgia', serif;
 }
 
-/* Main card styling */
+/* Main card styling - Warm cream background */
 .main-card {
     max-width: 1100px !important;
     margin: 20px auto !important;
     padding: 25px !important;
-    background: rgba(255, 248, 240, 0.95) !important;
+    background: rgba(245, 240, 235, 0.95) !important;
     border-radius: 22px !important;
-    border: 3px solid #C88F6A !important;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.20) !important;
+    border: 3px solid #8B6F47 !important;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25) !important;
 }
 
-/* Character buttons */
+/* Character buttons - Burnt orange gradient */
 .character-btn button {
     width: 100%;
     font-size: 18px !important;
     padding: 14px !important;
     border-radius: 14px !important;
-    background: #FCE8D8 !important;
-    border: 2px solid #C88F6A !important;
-    color: #5C4033 !important;
+    background: linear-gradient(135deg, #D97A3A, #C85A28) !important;
+    border: 2px solid #8B6F47 !important;
+    color: #F5F0EB !important;
+    font-weight: 600 !important;
 }
 .character-btn button:hover {
-    background: #F7D9C4 !important;
+    background: linear-gradient(135deg, #E68A4A, #D86A38) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
 }
 
 /* AGGRESSIVE OVERRIDES FOR ALL GRAY/DARK BACKGROUNDS */
@@ -148,103 +151,104 @@ div, section, article, aside, nav, main,
     background-color: transparent !important;
 }
 
-/* Character button row - force light background */
+/* Character button row - Bronze tone background */
 .gradio-row, [class*="gradio-row"] {
-    background: rgba(252, 232, 216, 0.5) !important;
+    background: rgba(139, 111, 71, 0.15) !important;
     padding: 10px !important;
     border-radius: 14px !important;
 }
 
-/* Input textbox and textarea */
+/* Input textbox and textarea - Warm cream */
 input, textarea, select,
 .input-text, .textbox,
 [class*="input"], [class*="textbox"],
 input[type="text"], textarea[class*="scroll"] {
-    background: #FFF5E6 !important;
-    background-color: #FFF5E6 !important;
-    color: #5C4033 !important;
-    border: 2px solid #E8D4C0 !important;
+    background: #F5F0EB !important;
+    background-color: #F5F0EB !important;
+    color: #3D3D3D !important;
+    border: 2px solid #8B6F47 !important;
 }
 
-/* Chatbot container and messages */
+/* Chatbot container - Dark slate blue */
 .chatbot, [data-testid="chatbot"],
 .chatbot *, [data-testid="chatbot"] *,
 .message-wrap, .message, .message-row,
 [class*="chatbot"], [class*="message"] {
-    background: #1a1a1a !important;
-    background-color: #1a1a1a !important;
-    color: #E0E0E0 !important;
+    background: #3D4F5C !important;
+    background-color: #3D4F5C !important;
+    color: #E8DDD3 !important;
 }
 
 /* Individual chat messages */
 .user-message, .bot-message,
 [class*="user"], [class*="bot"],
 .message.user, .message.bot {
-    background: rgba(255, 245, 230, 0.1) !important;
+    background: rgba(139, 111, 71, 0.3) !important;
     border-radius: 8px !important;
     padding: 8px !important;
 }
 
-/* Headers and labels */
+/* Headers and labels - Dark gray */
 h1, h2, h3, h4, h5, h6 {
-    color: #5C4033 !important;
+    color: #3D3D3D !important;
     background: transparent !important;
 }
 
 label, span, p {
-    color: #5C4033 !important;
+    color: #3D3D3D !important;
 }
 
-/* Button styling */
+/* Button styling - Burnt orange */
 button {
-    background: #E89B6C !important;
+    background: #D97A3A !important;
     color: white !important;
     border: none !important;
     border-radius: 8px !important;
+    font-weight: 600 !important;
 }
 
 button:hover {
-    background: #D88A5B !important;
+    background: #C85A28 !important;
 }
 
 /* Send button specific styling */
 button[variant="primary"] {
-    background: #E89B6C !important;
+    background: #D97A3A !important;
 }
 
 /* Audio component */
 audio, [class*="audio"] {
-    background: #FFF5E6 !important;
+    background: #F5F0EB !important;
 }
 
 /* Checkbox */
 input[type="checkbox"] {
-    accent-color: #C88F6A !important;
+    accent-color: #D97A3A !important;
 }
 
-/* Override any remaining dark/gray backgrounds with !important */
+/* Override any remaining dark/gray backgrounds */
 .dark, [class*="dark"],
 .bg-gray, [class*="bg-gray"],
 .bg-slate, [class*="bg-slate"] {
-    background: #FFF5E6 !important;
-    background-color: #FFF5E6 !important;
+    background: #F5F0EB !important;
+    background-color: #F5F0EB !important;
 }
 
-/* New Conversation button */
+/* New Conversation button - Rust/brick color */
 .clear-btn button, button:has(svg) {
-    background: #95a5a6 !important;
+    background: #A4483D !important;
     color: white !important;
 }
 
 .clear-btn button:hover {
-    background: #7f8c8d !important;
+    background: #8B3A30 !important;
 }
 
 /* Group elements (the boxes around sections) */
 .gr-group, [class*="gr-group"],
 .group, [class*="Group"] {
-    background: rgba(255, 248, 240, 0.95) !important;
-    border: 3px solid #C88F6A !important;
+    background: rgba(245, 240, 235, 0.95) !important;
+    border: 3px solid #8B6F47 !important;
     border-radius: 22px !important;
     padding: 20px !important;
 }
