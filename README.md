@@ -587,12 +587,6 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
-## 📧 Contact
-
-**Created by**: Alissen Moreno
-
-- GitHub: [@AliceInWonderland61](https://github.com/AliceInWonderland61)
-- Hugging Face: [@AlissenMoreno61](https://huggingface.co/AlissenMoreno61)
 
 **Questions?** Feel free to:
 - Open an issue on GitHub
